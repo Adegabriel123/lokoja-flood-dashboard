@@ -3,105 +3,145 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Interactive 2025 flood-event viewer for Lokoja with supplied GIS layers and live weather data.">
-  <title>Lokoja Flood Event Viewer</title>
+  <meta name="description" content="Lokoja 2025 Flood Event Viewer — historical flood observations, building-exposure screening and current weather conditions for Lokoja, Kogi State.">
+  <meta name="color-scheme" content="light dark">
+  <title>Lokoja 2025 Flood Event Viewer</title>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="preconnect" href="https://api.open-meteo.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&f[]=jet-brains-mono@400,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynhMZJOZ2mZQGQPe7bE0b4x1glw=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="./style.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to dashboard</a>
+  <a class="skip-link" href="#map">Skip to map</a>
+  <a class="skip-link" href="#stats">Skip to statistics</a>
+
   <header class="app-header">
-    <a class="brand" href="#main" aria-label="Lokoja Flood Event Viewer home">
+    <a class="brand" href="#main" aria-label="Lokoja 2025 Flood Event Viewer — home">
       <svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
         <path d="M7 5v22c0 5 3 8 8 8h18" stroke="currentColor" stroke-width="3.25" stroke-linecap="round"/>
         <path d="M15 8c5 5 7 10 6 17M33 7c-7 6-10 11-9 19" stroke="currentColor" stroke-width="3.25" stroke-linecap="round"/>
         <circle cx="23" cy="27" r="3.5" fill="currentColor"/>
       </svg>
-      <span><strong>Lokoja</strong><small>Flood Event Viewer</small></span>
+      <span><strong>Lokoja</strong><small>2025 Flood Event Viewer</small></span>
     </a>
     <div class="header-actions">
-      <span class="live-chip" id="weather-status"><i></i>Loading weather</span>
+      <span class="live-chip" id="weather-status" aria-live="polite"><i></i>Connecting…</span>
       <button class="icon-button" type="button" data-theme-toggle aria-label="Switch color theme" title="Switch color theme">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
   </header>
 
+  <div class="disclaimer-strip" role="region" aria-label="Data-status disclaimer">
+    <strong>Read me first:</strong>
+    <span>Flood extents are dated GIS observations supplied for this research project. Current weather information is obtained separately from an online weather service. Building exposure represents spatial screening and not confirmed structural damage. This dashboard is not an official emergency-warning system.</span>
+  </div>
+
   <main id="main" class="dashboard-shell">
-    <aside class="control-panel" aria-label="Map controls and event details">
+
+    <!-- LEFT CONTROL PANEL -->
+    <aside class="control-panel" aria-label="Map controls, observation timeline and weather">
+
       <section class="intro">
-        <p class="eyebrow">2025 GIS observations</p>
+        <p class="eyebrow">2025 GIS observations · Lokoja, Kogi State</p>
         <h1>Flood conditions at the Niger–Benue confluence</h1>
-        <p>Explore three supplied water-extent layers and compare them with current forecast weather for Lokoja.</p>
+        <p class="intro-sub">Historical flood mapping and exposure analysis supported by live meteorological information. Compare three dated water-extent observations, screen potentially exposed buildings, and read current model weather for Lokoja.</p>
       </section>
 
       <section class="event-control" aria-labelledby="event-heading">
         <div class="section-title-row">
           <h2 id="event-heading">Observation date</h2>
-          <span id="event-counter" class="mono">1 / 3</span>
+          <span id="event-counter" class="mono" aria-live="polite">2 / 3</span>
         </div>
         <div class="segmented" role="radiogroup" aria-label="Choose flood observation date">
-          <button type="button" role="radio" aria-checked="true" data-event="april21"><span>Apr 21</span><small>Reference</small></button>
-          <button type="button" role="radio" aria-checked="false" data-event="july15"><span>Jul 15</span><small>Flooding</small></button>
-          <button type="button" role="radio" aria-checked="false" data-event="nov2"><span>Nov 2</span><small>Post-flood</small></button>
+          <button type="button" role="radio" aria-checked="false" aria-pressed="false" data-event="april21"><span>Apr 21</span><small>Baseline</small></button>
+          <button type="button" role="radio" aria-checked="true" aria-pressed="true" data-event="july15"><span>Jul 15</span><small>Flooding</small></button>
+          <button type="button" role="radio" aria-checked="false" aria-pressed="false" data-event="nov2"><span>Nov 2</span><small>Post-flood</small></button>
         </div>
+        <p id="observation-note" class="observation-note">Principal flooding observation. Mapped water / flood extent — the peak of the three supplied observations.</p>
+      </section>
+
+      <section class="layers" aria-labelledby="layers-heading">
+        <div class="section-title-row">
+          <h2 id="layers-heading">Map layers</h2>
+        </div>
+        <ul class="layer-list">
+          <li><label class="toggle"><input type="checkbox" data-layer="flood" checked><span class="toggle-track"></span><span class="toggle-label">Mapped water / flood extent</span></label></li>
+          <li><label class="toggle"><input type="checkbox" data-layer="boundary" checked><span class="toggle-track"></span><span class="toggle-label">Study-area boundary</span></label></li>
+          <li><label class="toggle"><input type="checkbox" data-layer="towns" checked><span class="toggle-track"></span><span class="toggle-label">Settlement locations</span></label></li>
+          <li><label class="toggle"><input type="checkbox" data-layer="buildings" checked><span class="toggle-track"></span><span class="toggle-label">Potentially exposed buildings</span></label></li>
+          <li><label class="toggle"><input type="checkbox" data-layer="basemap" checked><span class="toggle-track"></span><span class="toggle-label">OpenStreetMap basemap</span></label></li>
+        </ul>
       </section>
 
       <section class="metrics" aria-label="Selected event metrics">
         <article class="metric-card">
-          <span>Mapped extent</span>
+          <span>Mapped water / flood area</span>
           <strong id="mapped-area" class="mono">—</strong>
-          <small>km² of mapped water</small>
+          <small>km² · UTM Zone 32N calculation</small>
         </article>
         <article class="metric-card">
-          <span>Buildings screened</span>
+          <span>Potentially exposed buildings</span>
           <strong id="building-count" class="mono">—</strong>
-          <small>centroids inside extent</small>
+          <small>centroids inside polygon</small>
+        </article>
+        <article class="metric-card">
+          <span>Exposure rate</span>
+          <strong id="exposure-rate" class="mono">—</strong>
+          <small>of mapped buildings</small>
+        </article>
+        <article class="metric-card">
+          <span>Change from previous</span>
+          <strong id="area-change" class="mono">—</strong>
+          <small>mapped area Δ</small>
         </article>
       </section>
 
       <section class="weather-card" aria-labelledby="weather-heading">
         <div class="section-title-row">
           <div>
-            <p class="eyebrow">Live forecast feed</p>
-            <h2 id="weather-heading">Weather in Lokoja</h2>
+            <p class="eyebrow">Current weather-model conditions for Lokoja</p>
+            <h2 id="weather-heading">Weather panel</h2>
           </div>
           <span id="weather-code" class="weather-symbol" aria-hidden="true">—</span>
         </div>
         <div class="weather-current">
           <div><strong id="temperature" class="mono">—</strong><span>Temperature</span></div>
           <div><strong id="precipitation" class="mono">—</strong><span>Current precipitation</span></div>
-          <div><strong id="humidity" class="mono">—</strong><span>Humidity</span></div>
+          <div><strong id="humidity" class="mono">—</strong><span>Relative humidity</span></div>
         </div>
         <div id="forecast" class="forecast" aria-label="Five-day precipitation forecast">
           <div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div>
         </div>
         <p id="weather-updated" class="updated">Requesting current model data…</p>
+        <button id="weather-refresh" class="ghost-button" type="button">Refresh weather now</button>
       </section>
 
       <details class="method-note">
         <summary>How to read this dashboard</summary>
-        <p>The colored polygon is a dated GIS observation, not a live flood feed. Building counts are exposure screening estimates—not confirmed damage. Weather is live model data and does not prove flooding.</p>
+        <p>The coloured polygon is a <strong>dated GIS observation</strong>, not a live flood feed. Building counts are <strong>exposure screening estimates</strong> (centroids inside polygons), not confirmed damage. Weather is <strong>live model data</strong> and does not prove that any specific street or building is currently flooded.</p>
       </details>
     </aside>
 
+    <!-- MAP PANEL -->
     <section class="map-panel" aria-label="Interactive flood map">
       <div id="map" role="application" aria-label="Map of Lokoja flood extent"></div>
       <div class="map-overlay map-title">
-        <span id="map-status" class="status-dot"></span>
-        <div><strong id="map-date">April 21, 2025</strong><small id="map-label">Pre-flood reference</small></div>
+        <span id="map-status" class="status-dot" aria-hidden="true"></span>
+        <div><strong id="map-date">July 15, 2025</strong><small id="map-label">Flooding observation · Peak flood observation</small></div>
       </div>
       <div class="map-overlay legend" aria-label="Map legend">
-        <div><i id="legend-flood"></i><span>Selected mapped extent</span></div>
-        <div><i class="legend-building"></i><span>Exposed building centroid</span></div>
-        <div><i class="legend-town"></i><span>Settlement</span></div>
-        <div><i class="legend-boundary"></i><span>Study boundary</span></div>
+        <div class="legend-title">Legend</div>
+        <div><i id="legend-flood" aria-hidden="true"></i><span id="legend-flood-label">Active date's mapped water</span></div>
+        <div><i class="legend-building" aria-hidden="true"></i><span>Potentially exposed building</span></div>
+        <div><i class="legend-town" aria-hidden="true"></i><span>Settlement</span></div>
+        <div><i class="legend-boundary" aria-hidden="true"></i><span>Study-area boundary</span></div>
+        <div><i class="legend-basemap" aria-hidden="true"></i><span>OpenStreetMap basemap</span></div>
       </div>
       <button id="fit-map" class="map-button" type="button" aria-label="Fit map to study area" title="Fit map to study area">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
@@ -111,9 +151,293 @@
     </section>
   </main>
 
+  <!-- BELOW THE MAP: STATISTICS, COMPARISON, GALLERY, METHODOLOGY, DOWNLOADS -->
+
+  <section id="stats" class="below-section stats-section" aria-labelledby="stats-heading">
+    <div class="section-header">
+      <p class="eyebrow">Statistical dashboard</p>
+      <h2 id="stats-heading">Time comparison across the three observations</h2>
+      <p class="section-lead">All figures are read directly from <code>data/summary.json</code> at runtime so the cards, the table and the chart remain internally consistent. No value is typed manually into the HTML.</p>
+    </div>
+
+    <div class="stats-grid">
+      <article class="stat-block">
+        <span class="stat-eyebrow">Settlements in study area</span>
+        <strong id="settlement-count" class="mono">—</strong>
+        <small>from supplied Towns dataset</small>
+      </article>
+      <article class="stat-block">
+        <span class="stat-eyebrow">Total mapped buildings</span>
+        <strong id="total-buildings" class="mono">—</strong>
+        <small>centroids in exposed-buildings dataset</small>
+      </article>
+      <article class="stat-block">
+        <span class="stat-eyebrow">Peak flooding observation</span>
+        <strong id="peak-event" class="mono">—</strong>
+        <small>largest mapped area</small>
+      </article>
+      <article class="stat-block">
+        <span class="stat-eyebrow">Active dataset status</span>
+        <strong id="active-status" class="mono">—</strong>
+        <small>processing label for selected date</small>
+      </article>
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comparison-table-wrap">
+        <table class="comparison-table">
+          <caption class="sr-only">Mapped area and exposed buildings across the three observation dates</caption>
+          <thead>
+            <tr>
+              <th scope="col">Observation</th>
+              <th scope="col" class="num">Mapped area (km²)</th>
+              <th scope="col" class="num">Exposed buildings</th>
+              <th scope="col">Interpretation</th>
+            </tr>
+          </thead>
+          <tbody id="comparison-body">
+            <tr><td colspan="4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="comparison-chart-wrap">
+        <div class="chart-eyebrow">Mapped area vs exposed buildings</div>
+        <div id="comparison-chart" class="comparison-chart" role="img" aria-label="Bar chart comparing mapped area and exposed-building count for each observation date"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="below-section gallery-section" aria-labelledby="gallery-heading">
+    <div class="section-header">
+      <p class="eyebrow">Supplied reference maps</p>
+      <h2 id="gallery-heading">Reference-image gallery</h2>
+      <p class="section-lead">Static maps supplied with the assignment. Click any image to enlarge. These are illustrative cartographic outputs, not interactive layers.</p>
+    </div>
+    <ul class="gallery" id="gallery">
+      <li class="gallery-card" data-image="april">
+        <button class="gallery-thumb" type="button" data-open-image="april" aria-label="Open pre-flood April 2025 reference map">
+          <img src="./images/april-21-2025.jpg" alt="Pre-flood reference map of Lokoja, 21 April 2025, showing baseline water extent." loading="lazy">
+        </button>
+        <div class="gallery-meta">
+          <strong>Pre-flood reference — April 21, 2025</strong>
+          <small>Supplied reference map · Baseline water observation</small>
+          <a class="ghost-button small" href="./images/april-21-2025.jpg" download>Download JPG</a>
+        </div>
+      </li>
+      <li class="gallery-card" data-image="july">
+        <button class="gallery-thumb" type="button" data-open-image="july" aria-label="Open flooding July 2025 reference map">
+          <img src="./images/july-15-2025.jpg" alt="Flooding reference map of Lokoja, 15 July 2025, showing peak flood extent." loading="lazy">
+        </button>
+        <div class="gallery-meta">
+          <strong>Flooding observation — July 15, 2025</strong>
+          <small>Supplied reference map · Principal flooding observation</small>
+          <a class="ghost-button small" href="./images/july-15-2025.jpg" download>Download JPG</a>
+        </div>
+      </li>
+      <li class="gallery-card" data-image="november">
+        <button class="gallery-thumb" type="button" data-open-image="november" aria-label="Open post-flood November 2025 reference map">
+          <img src="./images/november-02-2025.jpg" alt="Post-flood reference map of Lokoja, 2 November 2025, showing receding water." loading="lazy">
+        </button>
+        <div class="gallery-meta">
+          <strong>Post-flood observation — November 2, 2025</strong>
+          <small>Supplied reference map · Recession observation</small>
+          <a class="ghost-button small" href="./images/november-02-2025.jpg" download>Download JPG</a>
+        </div>
+      </li>
+      <li class="gallery-card" data-image="events">
+        <button class="gallery-thumb" type="button" data-open-image="events" aria-label="Open 2025 flood events overview map">
+          <img src="./images/flood-events-2025.jpg" alt="Overview map showing the three 2025 flood events for Lokoja." loading="lazy">
+        </button>
+        <div class="gallery-meta">
+          <strong>2025 flood events overview</strong>
+          <small>Supplied reference map · Combined overview</small>
+          <a class="ghost-button small" href="./images/flood-events-2025.jpg" download>Download JPG</a>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="below-section methodology-section" aria-labelledby="method-heading">
+    <div class="section-header">
+      <p class="eyebrow">Methodology</p>
+      <h2 id="method-heading">How the dashboard is built</h2>
+      <p class="section-lead">Open, defensible and reproducible. Source shapefiles are retained for traceability; processed WGS 84 GeoJSON files are used for browser visualization.</p>
+    </div>
+
+    <div class="method-grid">
+      <details class="method-card" open>
+        <summary>Data preparation</summary>
+        <div>
+          <ul>
+            <li>Source data were provided as shapefile datasets (geometry, attributes, projection and metadata retained across <code>.shp</code>, <code>.shx</code>, <code>.dbf</code>, <code>.prj</code>, <code>.sbn</code>, <code>.sbx</code>, <code>.cpg</code> and <code>.shp.xml</code> components).</li>
+            <li>The datasets were checked for their coordinate-reference information. Original layers used WGS 84 / UTM Zone 32N.</li>
+            <li>Relevant layers were transformed to WGS 84 (longitude, latitude) for web display in Leaflet.</li>
+            <li>Invalid polygon geometries (self-intersections, unclosed rings) were repaired before area calculation.</li>
+            <li>Web-ready datasets were exported as GeoJSON under <code>data/</code>.</li>
+            <li>Area calculations were conducted in UTM Zone 32N and stored as summary attributes; the browser does not recompute area from longitude/latitude.</li>
+            <li>Original source files were retained under <code>source-data/</code> for traceability.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Flood comparison</summary>
+        <div>
+          <p>The dashboard compares three dated spatial observations and does <strong>not</strong> continuously monitor flood boundaries. Each polygon is presented as a historical snapshot:</p>
+          <ul>
+            <li><strong>April 21</strong> — Baseline water extent. May contain permanent river water; do not treat the entire polygon as newly flooded land.</li>
+            <li><strong>July 15</strong> — Principal flooding observation. Mapped water / flood extent.</li>
+            <li><strong>November 2</strong> — Post-flood observation. Water may remain elevated; permanent river water remains present year-round.</li>
+          </ul>
+          <p>Where future work requires newly flooded land, the defensible operation is <em>potential inundation</em> = (July mapped water) − (April baseline water), still called <strong>potential</strong> because classification errors and imperfect alignment may affect the result.</p>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Exposure screening</summary>
+        <div>
+          <p>Building exposure uses the <strong>centroid-in-polygon</strong> method:</p>
+          <p class="formula">E<sub>i,t</sub> = 1 if the centroid of building <em>i</em> lies inside the flood polygon at time <em>t</em>, else 0.</p>
+          <p class="formula">N<sub>t</sub> = Σ E<sub>i,t</sub></p>
+          <p>The method is fast, simple to explain, and appropriate for preliminary screening. It may miss buildings partially intersected by water when the centroid remains outside, and may include structures whose centroid falls within permanent water. The displayed label is always <strong>"Potentially exposed buildings"</strong> — never "destroyed", "damaged" or "victims". No damage survey or field verification is identified in the repository.</p>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Weather integration</summary>
+        <div>
+          <p>Current temperature, precipitation, humidity, weather code, and a five-day precipitation forecast are retrieved from the Open-Meteo API for Lokoja (latitude 7.80, longitude 6.73, timezone Africa/Lagos). The request fires on page load and every 30 minutes. A manual refresh button and a "last updated" timestamp are exposed.</p>
+          <p>Weather is retrieved independently and is <strong>never</strong> used to redraw the historical flood polygons. If the weather service cannot be reached, the historical GIS layers continue working and the weather cards display "Temporarily unavailable".</p>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Data limitations</summary>
+        <div>
+          <ul>
+            <li>Unknown classification accuracy unless documented by the lecturer.</li>
+            <li>Unknown ground-validation status.</li>
+            <li>Potential differences in satellite acquisition conditions across the three dates.</li>
+            <li>Possibility of permanent water being included in the baseline polygon.</li>
+            <li>Building-footprint completeness depends on the supplied dataset.</li>
+            <li>Positional uncertainty between building and flood layers.</li>
+            <li>Weather-model uncertainty — Open-Meteo provides model output, not station observation.</li>
+            <li>Absence of verified river-gauge information.</li>
+            <li>Absence of an official emergency-warning feed.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Coordinate system &amp; area calculation</summary>
+        <div>
+          <p>All web-facing GeoJSON layers use WGS 84 geographic coordinates (longitude first, then latitude). Coordinates around Lokoja fall in the expected Nigerian geographic range (≈ 6.72° – 6.81° E, ≈ 7.75° – 7.84° N).</p>
+          <p>Projected UTM coordinates must not be passed directly into Leaflet as latitude and longitude. Area is therefore not recomputed in the browser; values are read from <code>summary.json</code>, where they were calculated in UTM Zone 32N.</p>
+          <p>Percentage change between two non-zero observations uses <code>C = (A₂ − A₁) / A₁ × 100</code>. Where the earlier area is zero or missing, the dashboard shows "Not applicable" rather than dividing by zero.</p>
+        </div>
+      </details>
+
+      <details class="method-card">
+        <summary>Performance strategy</summary>
+        <div>
+          <p>The complete building dataset is the largest performance risk. The dashboard therefore:</p>
+          <ul>
+            <li>Keeps the original <code>building.*</code> shapefile components in <code>source-data/buildings/</code>.</li>
+            <li>Uses the precomputed <code>exposed-buildings.geojson</code> for the default map.</li>
+            <li>Loads the exposed-building layer only after the main flood map is ready.</li>
+            <li>Allows the user to toggle the building layer off.</li>
+            <li>Stores statistical results in <code>summary.json</code> and reads them at runtime instead of recomputing thousands of spatial intersections in the browser.</li>
+            <li>Uses <code>preferCanvas: true</code> for fast point rendering of the 2,293 building centroids.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="below-section downloads-section" aria-labelledby="downloads-heading">
+    <div class="section-header">
+      <p class="eyebrow">Open data</p>
+      <h2 id="downloads-heading">Download datasets</h2>
+      <p class="section-lead">Every processed web dataset is available for download. Original shapefiles remain available through the GitHub repository under <code>source-data/</code>.</p>
+    </div>
+
+    <ul class="download-list" id="download-list">
+      <li>
+        <div class="download-meta">
+          <strong>April 21 GeoJSON</strong>
+          <small>WGS 84 · Polygon · Pre-flood water observation</small>
+        </div>
+        <a class="ghost-button small" href="./data/april21.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>July 15 GeoJSON</strong>
+          <small>WGS 84 · MultiPolygon · Flooding observation</small>
+        </div>
+        <a class="ghost-button small" href="./data/july15.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>November 2 GeoJSON</strong>
+          <small>WGS 84 · Polygon · Post-flood observation</small>
+        </div>
+        <a class="ghost-button small" href="./data/nov2.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>Study-area boundary</strong>
+          <small>WGS 84 · Polygon · Supplied reference GIS data</small>
+        </div>
+        <a class="ghost-button small" href="./data/boundary.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>Settlement locations</strong>
+          <small>WGS 84 · Point · Four settlements in study area</small>
+        </div>
+        <a class="ghost-button small" href="./data/towns.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>Exposed buildings</strong>
+          <small>WGS 84 · Point · Centroid screening result · 2,293 features</small>
+        </div>
+        <a class="ghost-button small" href="./data/exposed-buildings.geojson" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>Summary statistics</strong>
+          <small>JSON · Mapped areas, exposure counts, statuses</small>
+        </div>
+        <a class="ghost-button small" href="./data/summary.json" download>Download</a>
+      </li>
+      <li>
+        <div class="download-meta">
+          <strong>Source repository</strong>
+          <small>GitHub · Original shapefiles and metadata</small>
+        </div>
+        <a class="ghost-button small" href="https://github.com/Adegabriel123/lokoja-flood-dashboard" target="_blank" rel="noopener noreferrer">Open on GitHub</a>
+      </li>
+    </ul>
+  </section>
+
   <footer class="app-footer">
-    <p><strong>Research prototype.</strong> Historical flood extents: user-supplied GIS data. Weather: Open-Meteo. Basemap: OpenStreetMap contributors.</p>
-    <nav aria-label="Data links"><a href="./data/april21.geojson" download>April data</a><a href="./data/july15.geojson" download>July data</a><a href="./data/nov2.geojson" download>November data</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather source</a></nav>
+    <p><strong>Research prototype.</strong> Historical flood extents: user-supplied GIS data, 2025. Weather: Open-Meteo. Basemap: © OpenStreetMap contributors. Building footprints: supplied reference GIS data.</p>
+    <nav aria-label="Footer data links">
+      <a href="https://github.com/Adegabriel123/lokoja-flood-dashboard" target="_blank" rel="noopener noreferrer">Repository</a>
+      <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather source</a>
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Basemap credits</a>
+    </nav>
   </footer>
+
+  <!-- IMAGE LIGHTBOX -->
+  <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Enlarged reference map">
+    <button class="lightbox-close" type="button" data-close-lightbox aria-label="Close enlarged image">&times;</button>
+    <img id="lightbox-img" alt="">
+    <p id="lightbox-caption"></p>
+  </div>
+
+  <!-- SR-ONLY live region for map results -->
+  <p id="sr-summary" class="sr-only" aria-live="polite"></p>
 </body>
 </html>
