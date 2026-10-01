@@ -1,0 +1,30 @@
+{
+  "source": "User-supplied GIS layers",
+  "method": "Mapped area is computed from repaired polygon geometry in WGS 84 / UTM Zone 32N. Building exposure is a screening count of building-footprint centroids falling inside each mapped polygon; it is not a verified damage count.",
+  "events": [
+    {
+      "id": "april21",
+      "date": "April 21, 2025",
+      "status": "Pre-flood reference",
+      "area_km2": 15.09,
+      "building_centroids_within": 8,
+      "color": "#178b8b"
+    },
+    {
+      "id": "july15",
+      "date": "July 15, 2025",
+      "status": "Flooding observation",
+      "area_km2": 22.88,
+      "building_centroids_within": 2285,
+      "color": "#cf513d"
+    },
+    {
+      "id": "nov2",
+      "date": "November 2, 2025",
+      "status": "Post-flood reference",
+      "area_km2": 26.72,
+      "building_centroids_within": 29,
+      "color": "#315f75"
+    }
+  ]
+}
