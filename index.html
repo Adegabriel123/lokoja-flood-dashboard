@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive 2025 flood-event viewer for Lokoja with supplied GIS layers and live weather data.">
+  <title>Lokoja Flood Event Viewer</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&f[]=jet-brains-mono@400,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynhMZJOZ2mZQGQPe7bE0b4x1glw=" crossorigin="">
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+  <header class="app-header">
+    <a class="brand" href="#main" aria-label="Lokoja Flood Event Viewer home">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path d="M7 5v22c0 5 3 8 8 8h18" stroke="currentColor" stroke-width="3.25" stroke-linecap="round"/>
+        <path d="M15 8c5 5 7 10 6 17M33 7c-7 6-10 11-9 19" stroke="currentColor" stroke-width="3.25" stroke-linecap="round"/>
+        <circle cx="23" cy="27" r="3.5" fill="currentColor"/>
+      </svg>
+      <span><strong>Lokoja</strong><small>Flood Event Viewer</small></span>
+    </a>
+    <div class="header-actions">
+      <span class="live-chip" id="weather-status"><i></i>Loading weather</span>
+      <button class="icon-button" type="button" data-theme-toggle aria-label="Switch color theme" title="Switch color theme">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="dashboard-shell">
+    <aside class="control-panel" aria-label="Map controls and event details">
+      <section class="intro">
+        <p class="eyebrow">2025 GIS observations</p>
+        <h1>Flood conditions at the Niger–Benue confluence</h1>
+        <p>Explore three supplied water-extent layers and compare them with current forecast weather for Lokoja.</p>
+      </section>
+
+      <section class="event-control" aria-labelledby="event-heading">
+        <div class="section-title-row">
+          <h2 id="event-heading">Observation date</h2>
+          <span id="event-counter" class="mono">1 / 3</span>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Choose flood observation date">
+          <button type="button" role="radio" aria-checked="true" data-event="april21"><span>Apr 21</span><small>Reference</small></button>
+          <button type="button" role="radio" aria-checked="false" data-event="july15"><span>Jul 15</span><small>Flooding</small></button>
+          <button type="button" role="radio" aria-checked="false" data-event="nov2"><span>Nov 2</span><small>Post-flood</small></button>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Selected event metrics">
+        <article class="metric-card">
+          <span>Mapped extent</span>
+          <strong id="mapped-area" class="mono">—</strong>
+          <small>km² of mapped water</small>
+        </article>
+        <article class="metric-card">
+          <span>Buildings screened</span>
+          <strong id="building-count" class="mono">—</strong>
+          <small>centroids inside extent</small>
+        </article>
+      </section>
+
+      <section class="weather-card" aria-labelledby="weather-heading">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Live forecast feed</p>
+            <h2 id="weather-heading">Weather in Lokoja</h2>
+          </div>
+          <span id="weather-code" class="weather-symbol" aria-hidden="true">—</span>
+        </div>
+        <div class="weather-current">
+          <div><strong id="temperature" class="mono">—</strong><span>Temperature</span></div>
+          <div><strong id="precipitation" class="mono">—</strong><span>Current precipitation</span></div>
+          <div><strong id="humidity" class="mono">—</strong><span>Humidity</span></div>
+        </div>
+        <div id="forecast" class="forecast" aria-label="Five-day precipitation forecast">
+          <div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div>
+        </div>
+        <p id="weather-updated" class="updated">Requesting current model data…</p>
+      </section>
+
+      <details class="method-note">
+        <summary>How to read this dashboard</summary>
+        <p>The colored polygon is a dated GIS observation, not a live flood feed. Building counts are exposure screening estimates—not confirmed damage. Weather is live model data and does not prove flooding.</p>
+      </details>
+    </aside>
+
+    <section class="map-panel" aria-label="Interactive flood map">
+      <div id="map" role="application" aria-label="Map of Lokoja flood extent"></div>
+      <div class="map-overlay map-title">
+        <span id="map-status" class="status-dot"></span>
+        <div><strong id="map-date">April 21, 2025</strong><small id="map-label">Pre-flood reference</small></div>
+      </div>
+      <div class="map-overlay legend" aria-label="Map legend">
+        <div><i id="legend-flood"></i><span>Selected mapped extent</span></div>
+        <div><i class="legend-building"></i><span>Exposed building centroid</span></div>
+        <div><i class="legend-town"></i><span>Settlement</span></div>
+        <div><i class="legend-boundary"></i><span>Study boundary</span></div>
+      </div>
+      <button id="fit-map" class="map-button" type="button" aria-label="Fit map to study area" title="Fit map to study area">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+      </button>
+      <div id="map-loading" class="map-loading"><span class="skeleton map-skeleton"></span><p>Loading supplied GIS layers…</p></div>
+      <div id="map-error" class="map-error" hidden><strong>Map data could not load</strong><span>Serve these files through GitHub Pages or a local web server.</span></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p><strong>Research prototype.</strong> Historical flood extents: user-supplied GIS data. Weather: Open-Meteo. Basemap: OpenStreetMap contributors.</p>
+    <nav aria-label="Data links"><a href="./data/april21.geojson" download>April data</a><a href="./data/july15.geojson" download>July data</a><a href="./data/nov2.geojson" download>November data</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather source</a></nav>
+  </footer>
+</body>
+</html>
