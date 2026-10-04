@@ -1,7 +1,7 @@
 /* Lokoja 2025 Flood Event Viewer — application logic
- * State-driven dashboard: map, timeline, layer toggles, stats from summary.json,
- * comparison table + chart, weather (refresh + failure handling), gallery lightbox, downloads.
- * No figures are typed into the HTML; the JS reads summary.json so cards, table and map stay consistent.
+ * State-driven dashboard: map, layer toggles, metrics from summary.json,
+ * weather (refresh + failure handling), gallery lightbox, downloads.
+ * No figures are typed into the HTML; the JS reads summary.json so cards and map stay consistent.
  */
 (() => {
   'use strict';
@@ -138,7 +138,6 @@
     if (state.layers.buildings) state.exposedLayer.addTo(state.map);
 
     updateMetrics();
-    updateTimelineUI();
     updateMapOverlays();
     updateComparisonTable();
     updateComparisonChart();
@@ -148,64 +147,75 @@
     }
   }
 
-  // ---------- Metrics & timeline UI ----------
+  // ---------- Metrics UI ----------
   function updateMetrics() {
     const meta = EVENTS[state.selected];
     const summary = eventSummary(state.selected);
     if (!summary) return;
     const idx = ORDER.indexOf(state.selected);
 
-    $('#mapped-area').textContent = fmtArea(summary.area_km2);
-    $('#building-count').textContent = fmt(summary.building_centroids_within);
+    const mappedAreaEl = $('#mapped-area');
+    if (mappedAreaEl) mappedAreaEl.textContent = fmtArea(summary.area_km2);
+    const buildingCountEl = $('#building-count');
+    if (buildingCountEl) buildingCountEl.textContent = fmt(summary.building_centroids_within);
 
     // Exposure rate (percentage of total mapped buildings)
     const totalBuildings = state.exposureData ? state.exposureData.features.length : 0;
-    if (totalBuildings > 0) {
-      const pct = (summary.building_centroids_within / totalBuildings) * 100;
-      $('#exposure-rate').textContent = pct < 1 ? pct.toFixed(2) + '%' : pct.toFixed(1) + '%';
-    } else {
-      $('#exposure-rate').textContent = '—';
-    }
-
-    // Change from previous observation
-    if (idx === 0) {
-      $('#area-change').textContent = 'Baseline';
-    } else {
-      const prev = eventSummary(ORDER[idx - 1]);
-      if (!prev || prev.area_km2 === 0) {
-        $('#area-change').textContent = 'Not applicable';
+    const exposureRateEl = $('#exposure-rate');
+    if (exposureRateEl) {
+      if (totalBuildings > 0) {
+        const pct = (summary.building_centroids_within / totalBuildings) * 100;
+        exposureRateEl.textContent = pct < 1 ? pct.toFixed(2) + '%' : pct.toFixed(1) + '%';
       } else {
-        const c = ((summary.area_km2 - prev.area_km2) / prev.area_km2) * 100;
-        const sign = c > 0 ? '+' : '';
-        $('#area-change').textContent = `${sign}${c.toFixed(1)}%`;
+        exposureRateEl.textContent = '—';
       }
     }
 
-    $('#map-date').textContent = meta.date;
-    $('#map-label').textContent = `${meta.label} · ${meta.interpretation}`;
-    $('#map-status').style.background = meta.color;
-    $('#map-status').style.boxShadow = `0 0 0 5px ${meta.color}2e`;
-    $('#legend-flood').style.background = meta.color;
-    $('#legend-flood-label').textContent = `${meta.short} mapped water`;
-    $('#observation-note').textContent = meta.note;
-    $('#event-counter').textContent = `${idx + 1} / 3`;
-    $('#active-status').textContent = summary.status;
+    // Change from previous observation
+    const areaChangeEl = $('#area-change');
+    if (areaChangeEl) {
+      if (idx === 0) {
+        areaChangeEl.textContent = 'Baseline';
+      } else {
+        const prev = eventSummary(ORDER[idx - 1]);
+        if (!prev || prev.area_km2 === 0) {
+          areaChangeEl.textContent = 'Not applicable';
+        } else {
+          const c = ((summary.area_km2 - prev.area_km2) / prev.area_km2) * 100;
+          const sign = c > 0 ? '+' : '';
+          areaChangeEl.textContent = `${sign}${c.toFixed(1)}%`;
+        }
+      }
+    }
 
-    // Stats section
-    $('#settlement-count').textContent = state.townsData ? state.townsData.features.length : '—';
-    $('#total-buildings').textContent = totalBuildings.toLocaleString('en-NG');
+    const mapDateEl = $('#map-date');
+    if (mapDateEl) mapDateEl.textContent = meta.date;
+    const mapLabelEl = $('#map-label');
+    if (mapLabelEl) mapLabelEl.textContent = `${meta.label} · ${meta.interpretation}`;
+    const mapStatusEl = $('#map-status');
+    if (mapStatusEl) {
+      mapStatusEl.style.background = meta.color;
+      mapStatusEl.style.boxShadow = `0 0 0 5px ${meta.color}2e`;
+    }
+    const legendFloodEl = $('#legend-flood');
+    if (legendFloodEl) legendFloodEl.style.background = meta.color;
+    const legendFloodLabelEl = $('#legend-flood-label');
+    if (legendFloodLabelEl) legendFloodLabelEl.textContent = `${meta.short} mapped water`;
+
+    // Statistical dashboard section
+    const activeStatusEl = $('#active-status');
+    if (activeStatusEl) activeStatusEl.textContent = summary.status;
+    const settlementCountEl = $('#settlement-count');
+    if (settlementCountEl) settlementCountEl.textContent = state.townsData ? state.townsData.features.length : '—';
+    const totalBuildingsEl = $('#total-buildings');
+    if (totalBuildingsEl) totalBuildingsEl.textContent = totalBuildings.toLocaleString('en-NG');
 
     // Peak event detection
-    const peak = state.summary.events.reduce((a, b) => a.area_km2 > b.area_km2 ? a : b);
-    $('#peak-event').textContent = EVENTS[peak.id].short;
-  }
-
-  function updateTimelineUI() {
-    $$('[data-event]').forEach(btn => {
-      const isActive = btn.dataset.event === state.selected;
-      btn.setAttribute('aria-checked', String(isActive));
-      btn.setAttribute('aria-pressed', String(isActive));
-    });
+    if (state.summary && state.summary.events) {
+      const peak = state.summary.events.reduce((a, b) => a.area_km2 > b.area_km2 ? a : b);
+      const peakEventEl = $('#peak-event');
+      if (peakEventEl) peakEventEl.textContent = EVENTS[peak.id].short;
+    }
   }
 
   function updateMapOverlays() {
@@ -275,29 +285,36 @@
     el.textContent = `Observation ${meta.date}, ${meta.label}. Mapped water area ${fmtArea(summary.area_km2)} square kilometres. ${fmt(summary.building_centroids_within)} potentially exposed buildings out of ${state.exposureData.features.length.toLocaleString('en-NG')} mapped buildings.`;
   }
 
-  // ---------- Initialize map & load all data ----------
+  // ---------- Load all data (shared by initMap and refreshAll) ----------
+  async function loadData() {
+    const [summary, boundary, towns, exposure, ...events] = await Promise.all([
+      fetchJSON('./data/summary.json'),
+      fetchJSON('./data/boundary.geojson'),
+      fetchJSON('./data/towns.geojson'),
+      fetchJSON('./data/exposed-buildings.geojson'),
+      ...ORDER.map(id => fetchJSON(EVENTS[id].file))
+    ]);
+
+    // Validate
+    if (!summary || !Array.isArray(summary.events) || summary.events.length !== 3) {
+      throw new Error('summary.json is missing the expected events array.');
+    }
+    [boundary, towns, exposure, ...events].forEach((d, i) => {
+      if (!isValidGeoJSON(d)) throw new Error(`Invalid GeoJSON for dataset index ${i}`);
+    });
+
+    state.summary = summary;
+    state.townsData = towns;
+    state.exposureData = exposure;
+    ORDER.forEach((key, i) => { state.eventData[key] = events[i]; });
+
+    return { boundary, towns };
+  }
+
+  // ---------- Initialize map (runs once) ----------
   async function initMap() {
     try {
-      const [summary, boundary, towns, exposure, ...events] = await Promise.all([
-        fetchJSON('./data/summary.json'),
-        fetchJSON('./data/boundary.geojson'),
-        fetchJSON('./data/towns.geojson'),
-        fetchJSON('./data/exposed-buildings.geojson'),
-        ...ORDER.map(id => fetchJSON(EVENTS[id].file))
-      ]);
-
-      // Validate
-      if (!summary || !Array.isArray(summary.events) || summary.events.length !== 3) {
-        throw new Error('summary.json is missing the expected events array.');
-      }
-      [boundary, towns, exposure, ...events].forEach((d, i) => {
-        if (!isValidGeoJSON(d)) throw new Error(`Invalid GeoJSON for dataset index ${i}`);
-      });
-
-      state.summary = summary;
-      state.townsData = towns;
-      state.exposureData = exposure;
-      ORDER.forEach((key, i) => { state.eventData[key] = events[i]; });
+      const { boundary, towns } = await loadData();
 
       // Map setup
       state.map = L.map('map', { zoomControl: false, preferCanvas: true, minZoom: 10 }).setView([7.795, 6.762], 13);
@@ -316,13 +333,43 @@
       state.townsLayer = L.geoJSON(towns, { pointToLayer: townMarker });
 
       drawEvent(false);
-      // Fit to boundary, not to flood, so all dates show consistent framing
+      // Fit to boundary so all dates show consistent framing
       state.map.fitBounds(state.boundaryLayer.getBounds(), { padding: [20, 20] });
       $('#map-loading').hidden = true;
     } catch (error) {
       console.error('[initMap]', error);
       $('#map-loading').hidden = true;
       $('#map-error').hidden = false;
+    }
+  }
+
+  // ---------- Refresh all data (flood layers + weather) ----------
+  async function refreshAll() {
+    const btn = $('#refresh-all');
+    if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+    try {
+      const { boundary, towns } = await loadData();
+      // Update boundary layer
+      if (state.boundaryLayer) {
+        state.boundaryLayer.clearLayers();
+        state.boundaryLayer.addData(boundary);
+      }
+      // Update towns layer
+      if (state.townsLayer) {
+        state.townsLayer.clearLayers();
+        state.townsLayer.addData(towns);
+      }
+      // Redraw flood + exposure layers
+      drawEvent(false);
+      // Refresh weather too
+      await loadWeather();
+    } catch (error) {
+      console.error('[refreshAll]', error);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg> Refresh all data';
+      }
     }
   }
 
@@ -390,22 +437,6 @@
     }
   }
 
-  // ---------- Gallery lightbox ----------
-  function openLightbox(src, alt, caption) {
-    const lb = $('#lightbox');
-    const img = $('#lightbox-img');
-    const cap = $('#lightbox-caption');
-    img.src = src; img.alt = alt; cap.textContent = caption;
-    lb.hidden = false;
-    document.body.style.overflow = 'hidden';
-    $('[data-close-lightbox]').focus();
-  }
-  function closeLightbox() {
-    const lb = $('#lightbox');
-    lb.hidden = true;
-    document.body.style.overflow = '';
-  }
-
   // ---------- Wire up DOM events ----------
   function bindEvents() {
     // Theme toggle
@@ -413,13 +444,9 @@
       setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
     });
 
-    // Timeline buttons
-    $$('[data-event]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.selected = btn.dataset.event;
-        drawEvent(false);
-      });
-    });
+    // Refresh all data button
+    const refreshAllBtn = $('#refresh-all');
+    if (refreshAllBtn) refreshAllBtn.addEventListener('click', refreshAll);
 
     // Layer toggles
     $$('[data-layer]').forEach(input => {
@@ -438,33 +465,6 @@
 
     // Weather refresh
     $('#weather-refresh').addEventListener('click', loadWeather);
-
-    // Gallery
-    $$('[data-open-image]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.openImage;
-        const map = {
-          april:   { src: './images/april-21-2025.jpg',     alt: 'Pre-flood reference map of Lokoja, 21 April 2025.', cap: 'Pre-flood reference map — April 21, 2025. Supplied static cartographic output.' },
-          july:    { src: './images/july-15-2025.jpg',      alt: 'Flooding reference map of Lokoja, 15 July 2025.',  cap: 'Flooding observation map — July 15, 2025. Supplied static cartographic output.' },
-          november:{ src: './images/november-02-2025.jpg', alt: 'Post-flood reference map of Lokoja, 2 November 2025.', cap: 'Post-flood observation map — November 2, 2025. Supplied static cartographic output.' },
-          events:  { src: './images/flood-events-2025.jpg', alt: 'Overview of 2025 flood events for Lokoja.', cap: '2025 flood events overview — supplied static cartographic output combining all three observations.' }
-        }[key];
-        if (map) openLightbox(map.src, map.alt, map.cap);
-      });
-    });
-    $('[data-close-lightbox]').addEventListener('click', closeLightbox);
-    $('#lightbox').addEventListener('click', (e) => { if (e.target.id === 'lightbox') closeLightbox(); });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !$('#lightbox').hidden) closeLightbox();
-    });
-
-    // Image fallback for missing thumbnails
-    $$('img').forEach(img => {
-      img.addEventListener('error', () => {
-        img.style.background = 'var(--surface-offset)';
-        img.alt = 'Image could not be loaded. See the source repository for the original file.';
-      });
-    });
   }
 
   // ---------- Boot ----------
