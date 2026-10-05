@@ -43,13 +43,30 @@
 
       <section class="intro">
         <h1>Flood conditions at the Niger–Benue confluence</h1>
+        <p class="intro-sub">Historical flood mapping and exposure analysis supported by live meteorological information. Compare three dated water-extent observations, screen potentially exposed buildings, and read current model weather.</p>
       </section>
 
-      <section class="refresh-control">
+      <section class="refresh-control" aria-labelledby="refresh-heading">
+        <div class="section-title-row">
+          <h2 id="refresh-heading">Observation slideshow</h2>
+          <span id="event-counter" class="mono" aria-live="polite">2 / 3</span>
+        </div>
+        <div class="slideshow-display">
+          <div class="slideshow-current">
+            <span class="slideshow-label">Now showing</span>
+            <strong id="current-date">July 15, 2025</strong>
+            <small id="current-label">Flooding observation</small>
+          </div>
+          <div class="slideshow-next">
+            <span class="slideshow-label">Up next</span>
+            <strong id="next-date">November 2, 2025</strong>
+          </div>
+        </div>
         <button id="refresh-all" class="ghost-button refresh-all-btn" type="button">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Next observation
         </button>
+        <p class="updated">Advances through the three dated flood observations and reloads the map.</p>
       </section>
 
       <section class="layers" aria-labelledby="layers-heading">
@@ -129,7 +146,7 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
       </button>
       <div id="map-loading" class="map-loading"><span class="skeleton map-skeleton"></span><p>Loading supplied GIS layers…</p></div>
-      <div id="map-error" class="map-error" hidden><strong>Map data could not load</strong></div>
+      <div id="map-error" class="map-error" hidden><strong>Map data could not load</strong><span>Serve these files through GitHub Pages or a local web server.</span></div>
     </section>
   </main>
 
