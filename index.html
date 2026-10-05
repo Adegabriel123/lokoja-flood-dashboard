@@ -43,30 +43,13 @@
 
       <section class="intro">
         <h1>Flood conditions at the Niger–Benue confluence</h1>
-        <p class="intro-sub">Historical flood mapping and exposure analysis supported by live meteorological information. Compare three dated water-extent observations, screen potentially exposed buildings, and read current model weather.</p>
       </section>
 
-      <section class="refresh-control" aria-labelledby="refresh-heading">
-        <div class="section-title-row">
-          <h2 id="refresh-heading">Observation slideshow</h2>
-          <span id="event-counter" class="mono" aria-live="polite">2 / 3</span>
-        </div>
-        <div class="slideshow-display">
-          <div class="slideshow-current">
-            <span class="slideshow-label">Now showing</span>
-            <strong id="current-date">July 15, 2025</strong>
-            <small id="current-label">Flooding observation</small>
-          </div>
-          <div class="slideshow-next">
-            <span class="slideshow-label">Up next</span>
-            <strong id="next-date">November 2, 2025</strong>
-          </div>
-        </div>
+      <section class="refresh-control">
         <button id="refresh-all" class="ghost-button refresh-all-btn" type="button">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Next observation
         </button>
-        <p class="updated">Advances through the three dated flood observations and reloads the map.</p>
       </section>
 
       <section class="layers" aria-labelledby="layers-heading">
@@ -130,13 +113,9 @@
     <!-- MAP PANEL -->
     <section class="map-panel" aria-label="Interactive flood map">
       <div id="map" role="application" aria-label="Map of Lokoja flood extent"></div>
-      <div class="map-overlay map-title">
-        <span id="map-status" class="status-dot" aria-hidden="true"></span>
-        <div><strong id="map-date">July 15, 2025</strong><small id="map-label">Flooding observation · Peak flood observation</small></div>
-      </div>
       <div class="map-overlay legend" aria-label="Map legend">
         <div class="legend-title">Legend</div>
-        <div><i id="legend-flood" aria-hidden="true"></i><span id="legend-flood-label">Active date's mapped water</span></div>
+        <div><i id="legend-flood" aria-hidden="true"></i><span>Mapped water</span></div>
         <div><i class="legend-building" aria-hidden="true"></i><span>Potentially exposed building</span></div>
         <div><i class="legend-town" aria-hidden="true"></i><span>Settlement</span></div>
         <div><i class="legend-boundary" aria-hidden="true"></i><span>Study-area boundary</span></div>
