@@ -1,6 +1,6 @@
-/* Lokoja 2025 Flood Event Viewer — application logic
+/* Flood Watch — application logic
  * State-driven dashboard: map, layer toggles, metrics from summary.json,
- * weather (refresh + failure handling), gallery lightbox, downloads.
+ * observation slideshow (rotates through months), weather (refresh + failure handling).
  * No figures are typed into the HTML; the JS reads summary.json so cards and map stay consistent.
  */
 (() => {
@@ -139,8 +139,7 @@
 
     updateMetrics();
     updateMapOverlays();
-    updateComparisonTable();
-    updateComparisonChart();
+    updateSlideshowDisplay();
     updateSRSummary();
     if (fit && state.floodLayer && state.layers.flood) {
       state.map.fitBounds(state.floodLayer.getBounds(), { padding: [30, 30] });
@@ -201,21 +200,6 @@
     if (legendFloodEl) legendFloodEl.style.background = meta.color;
     const legendFloodLabelEl = $('#legend-flood-label');
     if (legendFloodLabelEl) legendFloodLabelEl.textContent = `${meta.short} mapped water`;
-
-    // Statistical dashboard section
-    const activeStatusEl = $('#active-status');
-    if (activeStatusEl) activeStatusEl.textContent = summary.status;
-    const settlementCountEl = $('#settlement-count');
-    if (settlementCountEl) settlementCountEl.textContent = state.townsData ? state.townsData.features.length : '—';
-    const totalBuildingsEl = $('#total-buildings');
-    if (totalBuildingsEl) totalBuildingsEl.textContent = totalBuildings.toLocaleString('en-NG');
-
-    // Peak event detection
-    if (state.summary && state.summary.events) {
-      const peak = state.summary.events.reduce((a, b) => a.area_km2 > b.area_km2 ? a : b);
-      const peakEventEl = $('#peak-event');
-      if (peakEventEl) peakEventEl.textContent = EVENTS[peak.id].short;
-    }
   }
 
   function updateMapOverlays() {
@@ -230,50 +214,27 @@
     }
   }
 
-  // ---------- Comparison table ----------
-  function updateComparisonTable() {
-    const tbody = $('#comparison-body');
-    if (!tbody || !state.summary) return;
-    tbody.innerHTML = state.summary.events.map(e => {
-      const isActive = e.id === state.selected ? 'active' : '';
-      const meta = EVENTS[e.id];
-      return `<tr class="${isActive}">
-        <td><strong>${escapeHTML(meta.short)}</strong><br><span class="tag">${escapeHTML(e.status)}</span></td>
-        <td class="num">${fmtArea(e.area_km2)}</td>
-        <td class="num">${fmt(e.building_centroids_within)}</td>
-        <td>${escapeHTML(meta.interpretation)}</td>
-      </tr>`;
-    }).join('');
+  // ---------- Slideshow display (current + next observation) ----------
+  function updateSlideshowDisplay() {
+    const idx = ORDER.indexOf(state.selected);
+    const nextIdx = (idx + 1) % ORDER.length;
+    const meta = EVENTS[state.selected];
+    const nextMeta = EVENTS[ORDER[nextIdx]];
+    const currentEl = $('#current-date');
+    const currentLabelEl = $('#current-label');
+    const nextEl = $('#next-date');
+    const counterEl = $('#event-counter');
+    if (currentEl) currentEl.textContent = meta.date;
+    if (currentLabelEl) currentLabelEl.textContent = meta.label;
+    if (nextEl) nextEl.textContent = nextMeta.date;
+    if (counterEl) counterEl.textContent = `${idx + 1} / 3`;
   }
 
-  // ---------- Comparison chart ----------
-  function updateComparisonChart() {
-    const chart = $('#comparison-chart');
-    if (!chart || !state.summary) return;
-    const events = state.summary.events;
-    const maxArea = Math.max(...events.map(e => e.area_km2));
-    const maxExp  = Math.max(...events.map(e => e.building_centroids_within));
+  // ---------- Comparison table (removed — section deleted) ----------
+  function updateComparisonTable() { /* no-op: stats section removed */ }
 
-    chart.innerHTML = events.map(e => {
-      const meta = EVENTS[e.id];
-      const areaH = (e.area_km2 / maxArea) * 100;
-      const expH  = (e.building_centroids_within / maxExp) * 100;
-      const activeClass = e.id === state.selected ? ' is-active' : '';
-      return `<div class="chart-bar-group${activeClass}">
-        <div class="chart-bar-stack">
-          <div class="chart-bar area" style="height:${areaH}%" title="Mapped area: ${fmtArea(e.area_km2)} km²"></div>
-          <div class="chart-bar exp"  style="height:${expH}%" title="Exposed buildings: ${fmt(e.building_centroids_within)}"></div>
-        </div>
-        <div class="chart-bar-value">${fmtArea(e.area_km2)} km²</div>
-        <div class="chart-bar-value">${fmt(e.building_centroids_within)} bldg</div>
-        <div class="chart-bar-label">${escapeHTML(meta.chartLabel)}</div>
-      </div>`;
-    }).join('') + `
-      <div style="grid-column:1/-1" class="chart-legend">
-        <span><i style="background:linear-gradient(180deg,var(--blue),color-mix(in oklab,var(--blue) 60%,var(--bg)))"></i> Mapped area (km²)</span>
-        <span><i style="background:linear-gradient(180deg,var(--exposure),color-mix(in oklab,var(--exposure) 60%,var(--bg)))"></i> Exposed buildings</span>
-      </div>`;
-  }
+  // ---------- Comparison chart (removed — section deleted) ----------
+  function updateComparisonChart() { /* no-op: stats section removed */ }
 
   // ---------- Screen-reader summary ----------
   function updateSRSummary() {
@@ -343,12 +304,19 @@
     }
   }
 
-  // ---------- Refresh all data (flood layers + weather) ----------
+  // ---------- Slideshow advance (rotates to next observation and reloads map) ----------
   async function refreshAll() {
     const btn = $('#refresh-all');
-    if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
     try {
+      // Advance to next observation in the rotation
+      const idx = ORDER.indexOf(state.selected);
+      const nextIdx = (idx + 1) % ORDER.length;
+      state.selected = ORDER[nextIdx];
+
+      // Reload data from source (honors the "reloads the map" requirement)
       const { boundary, towns } = await loadData();
+
       // Update boundary layer
       if (state.boundaryLayer) {
         state.boundaryLayer.clearLayers();
@@ -359,16 +327,14 @@
         state.townsLayer.clearLayers();
         state.townsLayer.addData(towns);
       }
-      // Redraw flood + exposure layers
+      // Redraw flood + exposure layers for the new observation
       drawEvent(false);
-      // Refresh weather too
-      await loadWeather();
     } catch (error) {
       console.error('[refreshAll]', error);
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg> Refresh all data';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="5" x2="19" y2="19"/></svg> Next observation';
       }
     }
   }
